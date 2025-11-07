@@ -1,50 +1,99 @@
 "use client";
-import { useState } from "react";
+import useSWR, { mutate } from 'swr';
+import { useSession } from '@clerk/nextjs';
+import { useCallback } from 'react';
+import type { Notice } from '@/store/mockNotices';
 
-export interface Notice {
-  id: number;
-  title: string;
-  message: string;
-  type: "warning" | "assignment";
-  scope: "global" | "member";
-  member?: string;
-  date: string;
-  status: "pending" | "responded";
-  feedback?: string;
-}
+const apiFetcher = async (url: string, session: any) => {
+  if (!session) {
+    throw new Error('No session');
+  }
+
+  const res = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${await session.getToken()}`
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch');
+  }
+
+  return res.json();
+};
 
 export default function useAdminNotices() {
-  const [notices, setNotices] = useState<Notice[]>([
-    {
-      id: 1,
-      title: "Late Task Submission",
-      message: "Design documentation was submitted late.",
-      type: "warning",
-      scope: "member",
-      member: "Kunal Daharwal",
-      date: "2025-11-01",
-      status: "responded",
-      feedback: "Understood",
-    },
-    {
-      id: 2,
-      title: "New Assignment: UI Polish",
-      message: "Refine the dashboard layout and improve chart visuals.",
-      type: "assignment",
-      scope: "global",
-      date: "2025-11-02",
-      status: "pending",
-    },
-  ]);
+  const { session } = useSession();
+  const { data: notices, error } = useSWR<Notice[]>('/api/notices', (url) => apiFetcher(url, session));
 
-  const addNotice = (notice: Omit<Notice, 'id'>) =>
-    setNotices((prev) => [...prev, { ...notice, id: prev.length + 1 }]);
+  const addNotice = async (notice: Omit<Notice, 'id'>) => {
+    try {
+      const res = await fetch('/api/notices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await session?.getToken()}`,
+        },
+        body: JSON.stringify(notice),
+      });
 
-  const updateNotice = (id: number, updated: Partial<Notice>) =>
-    setNotices((prev) => prev.map((n) => (n.id === id ? { ...n, ...updated } : n)));
+      if (!res.ok) {
+        throw new Error('Failed to add notice');
+      }
 
-  const deleteNotice = (id: number) =>
-    setNotices((prev) => prev.filter((n) => n.id !== id));
+      mutate('/api/notices');
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
-  return { notices, addNotice, updateNotice, deleteNotice };
+  const updateNotice = async (id: number, feedback: string) => {
+    try {
+      const res = await fetch(`/api/notices/${id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await session?.getToken()}`,
+          },
+          body: JSON.stringify({ feedback }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error('Failed to update notice');
+      }
+
+      mutate('/api/notices');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const deleteNotice = async (id: number) => {
+    try {
+      const res = await fetch(`/api/notices/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await session?.getToken()}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete notice');
+      }
+
+      mutate('/api/notices');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return {
+    notices: error ? [] : notices,
+    addNotice,
+    updateNotice,
+    deleteNotice,
+    isLoading: !notices && !error,
+  };
 }

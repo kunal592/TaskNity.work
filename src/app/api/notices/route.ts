@@ -1,43 +1,29 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/roleCheck";
+import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { notices, Notice } from '@/store/mockNotices';
 
-// POST: Create a notice (Admin only)
-export async function POST(request: Request) {
-  try {
-    await requireRole(["ADMIN"]);
-    const { title, content } = await request.json();
-
-    if (!title || !content) {
-      return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
-    }
-
-    const notice = await prisma.notice.create({
-      data: {
-        title,
-        content,
-      },
-    });
-
-    return NextResponse.json(notice, { status: 201 });
-  } catch (error) {
-    if (error instanceof Error && error.message === "Access denied") {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-    return NextResponse.json({ error: "Failed to create notice" }, { status: 500 });
+export async function GET() {
+  const { userId } = auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  return NextResponse.json(notices);
 }
 
-// GET: Fetch all notices
-export async function GET(request: Request) {
+export async function POST(req: Request) {
+  const { userId } = auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const notices = await prisma.notice.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-    return NextResponse.json(notices);
+    const newNotice: Omit<Notice, 'id'> = await req.json();
+    const newId = notices.length > 0 ? Math.max(...notices.map(n => n.id)) + 1 : 1;
+    const finalNotice: Notice = { ...newNotice, id: newId, date: new Date().toISOString().split('T')[0], status: 'pending' };
+    notices.push(finalNotice);
+    return NextResponse.json(finalNotice, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch notices" }, { status: 500 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 }

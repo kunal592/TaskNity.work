@@ -1,11 +1,11 @@
 
 "use client";
-import { useFinanceStore } from "@/store/useFinanceStore";
+import useFinance from "@/hooks/useFinance";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default function ExpenseTab() {
-  const expenses = useFinanceStore((state: any) => state.expenses);
+  const { expenses } = useFinance();
 
   const total = expenses.reduce((sum: number, e: any) => sum + e.amount, 0);
   const approved = expenses.filter((e: any) => e.status === "Approved");

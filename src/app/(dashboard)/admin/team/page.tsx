@@ -1,7 +1,7 @@
 
 'use client';
 import { useState } from 'react';
-import useUsersData, { User } from '@/hooks/useUsersData';
+import useTeamManagement, { User } from '@/hooks/useTeamManagement';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,12 +46,16 @@ const initialNewUserState = {
 };
 
 export default function TeamPage() {
-  const { users, addUser, deleteUser } = useUsersData();
+  const { users, addUser, deleteUser, updateUser, isLoading } = useTeamManagement();
   const { roleAccess } = useApp();
-  const [profileUser, setProfileUser] = useState<number | null>(null);
+  const [profileUser, setProfileUser] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [newUser, setNewUser] = useState(initialNewUserState);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [salary, setSalary] = useState<number | undefined>();
+  const [role, setRole] = useState<User['role'] | undefined>();
+
 
   if (!roleAccess.canManageTeam) {
     return <p className="p-6 text-red-500">You don't have access to manage the team.</p>;
@@ -66,27 +70,44 @@ export default function TeamPage() {
     setNewUser(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.role || !newUser.team) {
       toast.error('Please fill in all required fields (Name, Email, Role, Team).');
       return;
     }
     const userToAdd = {
         ...newUser,
-        salary: parseFloat(newUser.salary) || 0
+        salary: parseFloat(newUser.salary) || 0,
+        avatar: `https://i.pravatar.cc/150?u=${newUser.email}`,
     };
-    addUser(userToAdd);
+    await addUser(userToAdd as any);
     toast.success('User added successfully!');
     setIsAddUserOpen(false);
     setNewUser(initialNewUserState);
   };
 
-  const handleTerminate = (userId: number) => {
-    deleteUser(userId);
+  const handleTerminate = async (userId: string) => {
+    await deleteUser(userId);
     toast.success('Employee terminated successfully!');
   }
 
-  const filteredUsers = users.filter(user => 
+  const handleUpdateRole = async () => {
+    if (editingUser && role) {
+      await updateUser(editingUser.id, { role });
+      toast.success('Role updated successfully');
+      setEditingUser(null);
+    }
+  };
+
+  const handleUpdateSalary = async () => {
+    if (editingUser && salary) {
+      await updateUser(editingUser.id, { salary });
+      toast.success('Salary updated successfully');
+      setEditingUser(null);
+    }
+  };
+
+  const filteredUsers = users.filter((user: User) => 
     user.name.toLowerCase().includes(search.toLowerCase()) ||
     user.email.toLowerCase().includes(search.toLowerCase())
   );
@@ -97,7 +118,7 @@ export default function TeamPage() {
         <UserProfileModal
           open={profileUser !== null}
           onClose={() => setProfileUser(null)}
-          userId={profileUser}
+          userId={parseInt(profileUser.split('-')[1])}
         />
       )}
       <div className="flex justify-between items-center">
@@ -200,7 +221,7 @@ export default function TeamPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user: User) => (
                   <tr key={user.id} className="border-b last:border-b-0 hover:bg-muted/30">
                     <td className="p-3">
                       <div
@@ -219,9 +240,48 @@ export default function TeamPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-3">{user.role}</td>
+                    <td className="p-3">
+                      <Dialog onOpenChange={(isOpen) => !isOpen && setEditingUser(null)}>
+                          <DialogTrigger asChild>
+                            <Button variant='link' onClick={() => setEditingUser(user)}>{user.role}</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Change Role</DialogTitle>
+                            </DialogHeader>
+                            <Select onValueChange={(value: User['role']) => setRole(value)} defaultValue={user.role}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Admin">Admin</SelectItem>
+                                    <SelectItem value="Member">Member</SelectItem>
+                                    <SelectItem value="Viewer">Viewer</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <DialogFooter>
+                              <Button onClick={handleUpdateRole}>Update Role</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </td>
                     <td className="p-3">{user.team}</td>
-                    <td className="p-3">₹{user.salary?.toLocaleString()}</td>
+                    <td className="p-3">
+                       <Dialog onOpenChange={(isOpen) => !isOpen && setEditingUser(null)}>
+                          <DialogTrigger asChild>
+                            <Button variant='link' onClick={() => setEditingUser(user)}>{`₹${user.salary?.toLocaleString()}`}</Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Update Salary</DialogTitle>
+                            </DialogHeader>
+                           <Input type='number' placeholder='Enter new salary' onChange={(e) => setSalary(Number(e.target.value))} defaultValue={user.salary} />
+                            <DialogFooter>
+                              <Button onClick={handleUpdateSalary}>Update Salary</Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                    </td>
                     <td className="p-3">{user.joined}</td>
                     <td className="p-3">
                       {user.tasks.length > 0 ? (

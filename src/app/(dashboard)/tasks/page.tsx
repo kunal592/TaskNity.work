@@ -46,6 +46,7 @@ import TaskDetailsModal from '@/components/kanban/TaskDetailsModal';
 import UserProfileModal from '@/components/profile/UserProfileModal';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import useTasks from '@/hooks/useTasks';
 
 const columns = ['To Do', 'In Progress', 'Done'] as const;
 type Status = (typeof columns)[number];
@@ -61,7 +62,9 @@ const initialNewTaskState = {
 };
 
 export default function TasksPage() {
-  const { tasks, setTasks, projects, setProjects, users, roleAccess } = useApp();
+  const { projects, setProjects, users, roleAccess } = useApp();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(projects[0]?.id);
+  const { tasks, setTasks, isLoading } = useTasks(selectedProjectId);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [newTask, setNewTask] = useState(initialNewTaskState);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -183,7 +186,7 @@ export default function TasksPage() {
     const newTaskData: Task = {
       id: `task-${Date.now()}`,
       title: newTask.title,
-      description: newTask.description,
+      description:newTask.description,
       priority: newTask.priority,
       projectId: newTask.projectId,
       assignedTo: newTask.assignedTo,
@@ -347,6 +350,18 @@ export default function TasksPage() {
             </Dialog>
           )}
         </div>
+       <div className="mb-4">
+          <Select onValueChange={setSelectedProjectId} defaultValue={selectedProjectId}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="Select a project" />
+            </SelectTrigger>
+            <SelectContent>
+              {projects.map(project => (
+                <SelectItem key={project.id} value={project.id}>{project.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <DndContext
           sensors={sensors}
@@ -376,7 +391,7 @@ export default function TasksPage() {
         </DndContext>
       </div>
       <div className="w-64 flex-shrink-0">
-          <Leaderboard users={users} tasks={tasks} onUserClick={handleUserClick} />
+          <Leaderboard onUserClick={handleUserClick} />
       </div>
        {selectedTask && (
         <TaskDetailsModal

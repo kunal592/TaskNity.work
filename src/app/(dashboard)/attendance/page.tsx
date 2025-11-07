@@ -1,33 +1,31 @@
 "use client";
-import { useApp } from "@/context/AppContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 import AttendanceGraph from "@/components/profile/AttendanceGraph";
 import { motion } from "framer-motion";
+import useAttendance from "@/hooks/useAttendance";
+import { useUser } from "@clerk/nextjs";
 
 export default function AttendancePage() {
-  const { currentUser, attendance, markAttendance, roleAccess } = useApp();
+  const { user: currentUser } = useUser();
+  const { attendance, markAttendance, isLoading } = useAttendance();
 
-  if (!currentUser) {
+  if (isLoading || !currentUser) {
     return <p className="p-6 text-muted-foreground">Loading attendance data...</p>;
-  }
-
-  if (!roleAccess.canMarkAttendance) {
-    return <p className="text-red-500 p-4">You don’t have access to Attendance.</p>;
   }
 
   const today = new Date().toISOString().split("T")[0];
   const alreadyMarked = attendance.find(
-    (a) => a.userId === currentUser.id && a.date === today
+    (a: any) => a.userId === currentUser.id && a.date === today
   );
 
-  const userLogs = attendance.filter((a) => a.userId === currentUser.id);
+  const userLogs = attendance.filter((a: any) => a.userId === currentUser.id);
 
   const recentAttendance = userLogs
     .slice(-7)
-    .map((a) => ({ date: a.date.slice(5), value: a.status === "Present" ? 1 : 0.5 }));
+    .map((a: any) => ({ date: a.date.slice(5), value: a.status === "Present" ? 1 : 0.5 }));
 
   return (
     <motion.div
@@ -35,7 +33,7 @@ export default function AttendancePage() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 p-6"
     >
-      <h2 className="text-2xl font-semibold">Attendance - {currentUser.name}</h2>
+      <h2 className="text-2xl font-semibold">Attendance - {currentUser.fullName}</h2>
 
       <div className="space-y-6">
         <Card>
@@ -90,7 +88,7 @@ export default function AttendancePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {userLogs.slice(-10).reverse().map((log) => (
+                  {userLogs.slice(-10).reverse().map((log: any) => (
                     <tr key={log.id} className="border-b last:border-none">
                       <td className="py-2">{log.date}</td>
                       <td className="py-2">{log.status}</td>

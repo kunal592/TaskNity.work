@@ -1,30 +1,33 @@
-"use client";
-import type { Dispatch, SetStateAction } from 'react';
-import { createContext, useContext, useState, useEffect } from "react";
-import { users as mockUsers, projects as mockProjects, tasks as mockTasks, attendance as mockAttendance, expenses as mockExpenses, expenseCategories as mockExpenseCategories, leaves as mockLeaves } from "@/mock/data";
-import type { AppContextType, User, Project, Task, Attendance, Expense, Leave } from '@/types';
+'use client';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { AppContextType, User, Project, Task, Attendance, Leave, Expense } from '@/types';
+import { useProjects } from '@/hooks/useProjects';
+import { useUsers } from '@/hooks/useUsers';
+import { useTasks } from '@/hooks/useTasks';
+import { useAttendance } from '@/hooks/useAttendance';
+import { useLeaves } from '@/hooks/useLeaves';
+import { useExpenses } from '@/hooks/useExpenses';
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const role = "Member"; // Defaulting to 'Member' as role switcher is removed.
-  const [users] = useState<User[]>(mockUsers);
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const { users, updateUser } = useUsers();
+  const { projects, setProjects } = useProjects();
+  const { tasks, setTasks } = useTasks();
+  const { attendance, setAttendance } = useAttendance();
+  const { leaves, setLeaves } = useLeaves();
+  const { expenses, setExpenses } = useExpenses();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [attendance, setAttendance] = useState<Attendance[]>(mockAttendance);
-  const [leaves, setLeaves] = useState<Leave[]>(mockLeaves);
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
-  const [expenseCategories] = useState<string[]>(mockExpenseCategories);
+  const [expenseCategories] = useState<string[]>(["Food", "Travel", "Supplies"]); // Static for now
 
   useEffect(() => {
-    // Setting user based on the hardcoded role.
-    const userForRole = users.find(u => u.role === role);
-    setCurrentUser(userForRole || users.find(u => u.role === 'Member') || users[0] || null);
+    // TODO: Replace with actual current user logic
+    const userForRole = users.find(u => u.role === 'Member';
+    setCurrentUser(userForRole || users[0] || null);
   }, [users]);
-  
-  const markAttendance = (status: Attendance['status']) => {
-    const today = new Date().toISOString().split("T")[0];
+
+  const markAttendance = async (status: Attendance['status']) => {
+    const today = new Date().toISOString().split('T')[0];
     if (!currentUser) return;
 
     const existingEntry = attendance.find(
@@ -32,28 +35,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
 
     if (!existingEntry) {
-      const newAttendance: Attendance = {
-        id: `att-${Date.now()}`,
-        userId: currentUser.id,
-        date: today,
-        status,
-      };
-      setAttendance([...attendance, newAttendance]);
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: currentUser.id, date: today, status }),
+      });
+
+      if (res.ok) {
+        const newAttendance = await res.json();
+        setAttendance([...attendance, newAttendance]);
+      }
     }
   };
 
   const roleAccess = {
-    canManageProjects: currentUser?.role === "Admin",
-    canManageTasks: currentUser ? ["Admin", "Member"].includes(currentUser.role) : false,
-    canViewAnalytics: currentUser ? ["Admin", "Member", "Viewer"].includes(currentUser.role) : false,
-    canManageTeam: currentUser?.role === "Admin",
-    canMarkAttendance: currentUser ? ["Admin", "Member"].includes(currentUser.role) : false,
-    canManageExpenses: currentUser?.role === "Admin",
+    canManageProjects: currentUser?.role === 'Admin',
+    canManageTasks: currentUser ? ['Admin', 'Member'].includes(currentUser.role) : false,
+    canViewAnalytics: currentUser ? ['Admin', 'Member', 'Viewer'].includes(currentUser.role) : false,
+    canManageTeam: currentUser?.role === 'Admin',
+    canMarkAttendance: currentUser ? ['Admin', 'Member'].includes(currentUser.role) : false,
+    canManageExpenses: currentUser?.role === 'Admin',
   };
-  
+
   const value: AppContextType = {
     currentUser,
     users,
+    updateUser,
     projects,
     setProjects,
     tasks,
@@ -65,9 +74,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLeaves,
     roleAccess,
     expenses,
+    setExpenses,
     expenseCategories,
-  }
-  
+  };
+
   return (
     <AppContext.Provider value={value}>
       {children}
