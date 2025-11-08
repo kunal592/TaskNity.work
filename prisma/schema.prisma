@@ -56,26 +56,31 @@ enum InvoiceStatus {
 // ---------------------------------------------
 
 model User {
-  id              String         @id @default(uuid())
-  name            String
-  email           String         @unique
-  password        String
-  role            Role           @default(MEMBER)
-  avatar          String?
-  joinDate        DateTime       @default(now())
-  salary          Float?         @default(0)
-  salaryStatus    SalaryStatus?  @default(PENDING)
-  tasksAssigned   Task[]         @relation("TaskAssignees")
-  tasksCreated    Task[]         @relation("TaskCreator")
-  projects        ProjectMember[]
-  attendance      Attendance[]
-  notices         Notice[]       @relation("NoticeRecipient")
-  comments        Comment[]
-  financeRequests Expense[]      @relation("ExpenseRequester")
-  warnings        Warning[]      @relation("UserWarnings")
-  feedbacks       Feedback[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  name              String
+  email             String         @unique
+  password          String
+  role              Role           @default(MEMBER)
+  avatar            String?
+  joinDate          DateTime       @default(now())
+  salary            Float?         @default(0)
+  salaryStatus      SalaryStatus?  @default(PENDING)
+  tasksAssigned     Task[]         @relation("TaskAssignees")
+  tasksCreated      Task[]         @relation("TaskCreator")
+  projects          ProjectMember[]
+  attendance        Attendance[]
+  notices           Notice[]       @relation("NoticeRecipient")
+  comments          Comment[]
+  financeRequests   Expense[]      @relation("ExpenseRequester")
+  warnings          Warning[]      @relation("UserWarnings")
+  feedbacks         Feedback[]
+  createdProjects   Project[]      @relation("ProjectCreator")
+  createdNotices    Notice[]       @relation("NoticeCreator")
+  approvedExpenses  Expense[]      @relation("ExpenseApprover")
+  createdInvoices   Invoice[]      @relation("InvoiceCreator")
+  leaderboard       Leaderboard? 
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 model Project {
@@ -86,7 +91,7 @@ model Project {
   progress    Float            @default(0)
   tasks       Task[]
   members     ProjectMember[]
-  createdBy   User?            @relation(fields: [createdById], references: [id])
+  createdBy   User?            @relation("ProjectCreator", fields: [createdById], references: [id])
   createdById String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -155,7 +160,7 @@ model Notice {
   targetUser  User?       @relation("NoticeRecipient", fields: [targetUserId], references: [id])
   targetUserId String?
   feedbacks   Feedback[]
-  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdBy   User        @relation("NoticeCreator", fields: [createdById], references: [id])
   createdById String
   createdAt   DateTime    @default(now())
 }
@@ -193,16 +198,16 @@ model Attendance {
 // FINANCE MODULE
 // ---------------------------------------------
 model Expense {
-  id          String         @id @default(uuid())
-  title       String
-  description String?
-  amount      Float
-  status      ExpenseStatus  @default(PENDING)
-  requestedBy User           @relation("ExpenseRequester", fields: [requestedById], references: [id])
+  id            String         @id @default(uuid())
+  title         String
+  description   String?
+  amount        Float
+  status        ExpenseStatus  @default(PENDING)
+  requestedBy   User           @relation("ExpenseRequester", fields: [requestedById], references: [id])
   requestedById String
-  approvedBy  User?          @relation(fields: [approvedById], references: [id])
-  approvedById String?
-  date        DateTime       @default(now())
+  approvedBy    User?          @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  approvedById  String?
+  date          DateTime       @default(now())
 }
 
 model Invoice {
@@ -212,7 +217,7 @@ model Invoice {
   status      InvoiceStatus  @default(PENDING)
   issuedDate  DateTime       @default(now())
   paidDate    DateTime?
-  createdBy   User?          @relation(fields: [createdById], references: [id])
+  createdBy   User?          @relation("InvoiceCreator", fields: [createdById], references: [id])
   createdById String?
 }
 
@@ -220,10 +225,10 @@ model Invoice {
 // LEADERBOARD
 // ---------------------------------------------
 model Leaderboard {
-  id        String  @id @default(uuid())
-  user      User    @relation(fields: [userId], references: [id])
-  userId    String
-  score     Int     @default(0)
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  score     Int      @default(0)
   rank      Int?
   updatedAt DateTime @updatedAt
 }

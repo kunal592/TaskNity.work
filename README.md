@@ -83,7 +83,7 @@ These instructions will guide you through setting up the project for development
     npm run dev
     ```
 
-    The application should now be running at `http://localhost:3000`.
+    The application should now be running at `http://localhost:9005`.
 
 6.  **VS Code Extensions (Recommended):**
 
