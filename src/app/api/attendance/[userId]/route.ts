@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { roleCheck } from '@/lib/roleCheck';
+import { requireRole } from '@/lib/roleCheck';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: { userId: string } }
 ) {
   try {
-    const user = await roleCheck();
+    const user = await requireRole(['ADMIN', 'MEMBER']);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

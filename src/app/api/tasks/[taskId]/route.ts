@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { PrismaClient, TaskStatus, Priority } from '@prisma/client';
-import { roleCheck } from '@/lib/roleCheck';
+import { requireRole } from '@/lib/roleCheck';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +10,7 @@ export async function PUT(
   { params }: { params: { taskId: string } }
 ) {
   try {
-    const user = await roleCheck();
+    const user = await requireRole(['ADMIN', 'MEMBER']);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -67,7 +67,7 @@ export async function DELETE(
   { params }: { params: { taskId: string } }
 ) {
   try {
-    const user = await roleCheck();
+    const user = await requireRole(['ADMIN', 'MEMBER']);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

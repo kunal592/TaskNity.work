@@ -1,14 +1,14 @@
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { roleCheck } from '@/lib/roleCheck';
+import { requireRole } from '@/lib/roleCheck';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {
-    const user = await roleCheck();
-    if (!user || user.role !== 'ADMIN') {
+    const user = await requireRole(['ADMIN']);
+    if (!user) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
