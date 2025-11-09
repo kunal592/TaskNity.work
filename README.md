@@ -13,6 +13,60 @@ TaskNity.Work is a full-stack project management application designed to streaml
 *   **Finance & Expense Tracking:** Manage company finances, track expenses, and generate invoices.
 *   **Admin Notices:** A system for admins to broadcast notices to users.
 
+## API Endpoints
+
+The backend provides the following API endpoints:
+
+*   **Authentication:**
+    *   `GET /api/auth/me`: Get the current user.
+    *   `POST /api/auth/logout`: Log the user out.
+    *   Clerk handles `login` and `register` functionality.
+*   **Analytics:**
+    *   `GET /api/analytics`: Get application analytics.
+*   **Attendance:**
+    *   `GET /api/attendance`: Get all attendance records.
+    *   `POST /api/attendance`: Mark attendance.
+    *   `GET /api/attendance/{userId}`: Get attendance for a specific user.
+*   **Expenses:**
+    *   `GET /api/expenses`: Get all expenses.
+    *   `POST /api/expenses`: Create a new expense.
+    *   `PUT /api/expenses/{expenseId}`: Update an expense.
+*   **Invoices:**
+    *   `GET /api/invoices`: Get all invoices.
+    *   `POST /api/invoices/pdf`: Generate a PDF invoice.
+*   **Leaves:**
+    *   `GET /api/leaves`: Get all leave requests.
+    *   `POST /api/leaves`: Create a new leave request.
+    *   `PUT /api/leaves/{leaveId}`: Update a leave request.
+*   **Notices:**
+    *   `GET /api/notices`: Get all notices.
+    *   `POST /api/notices`: Create a new notice.
+    *   `GET /api/notices/{id}`: Get a specific notice.
+    *   `DELETE /api/notices/{id}`: Delete a notice.
+*   **Payroll:**
+    *   `GET /api/payroll`: Get payroll information.
+*   **Projects:**
+    *   `GET /api/projects`: Get all projects.
+    *   `POST /api/projects`: Create a new project.
+    *   `GET /api/projects/{id}`: Get a specific project.
+    *   `DELETE /api/projects/{id}`: Delete a project.
+    *   `GET /api/projects/{projectId}/tasks`: Get all tasks for a project.
+*   **Tasks:**
+    *   `GET /api/tasks`: Get all tasks.
+    *   `POST /api/tasks`: Create a new task.
+    *   `GET /api/tasks/classified`: Get classified tasks.
+    *   `GET /api/tasks/{taskId}`: Get a specific task.
+    *   `PUT /api/tasks/{taskId}`: Update a task.
+    *   `DELETE /api/tasks/{taskId}`: Delete a task.
+*   **Users:**
+    *   `GET /api/users`: Get all users.
+    *   `POST /api/users`: Create a new user.
+    *   `GET /api/users/leaderboard`: Get the user leaderboard.
+    *   `GET /api/users/payroll`: Get user payroll information.
+    *   `GET /api/users/{id}`: Get a specific user.
+    *   `PUT /api/users/{id}`: Update a user.
+    *   `DELETE /api/users/{id}`: Delete a user.
+
 ## Tech Stack
 
 *   **Frontend:** Next.js, React
@@ -54,11 +108,15 @@ These instructions will guide you through setting up the project for development
 
     ```
     # Clerk
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<Your Clerk Publishable Key>
-    CLERK_SECRET_KEY=<Your Clerk Secret Key>
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+    CLERK_SECRET_KEY=YOUR_SECRET_KEY
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 
     # Database (NeonDB)
-    DATABASE_URL=<Your NeonDB Connection String>
+    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
     ```
 
 4.  **Set up Prisma:**
@@ -83,7 +141,7 @@ These instructions will guide you through setting up the project for development
     npm run dev
     ```
 
-    The application should now be running at `http://localhost:9005`.
+    The application should now be running at `http://localhost:3000`.
 
 6.  **VS Code Extensions (Recommended):**
 

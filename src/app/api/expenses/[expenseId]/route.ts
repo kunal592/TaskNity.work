@@ -5,23 +5,30 @@ import { roleCheck } from '@/lib/roleCheck';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { expenseId: string } }
+) {
   try {
     const user = await roleCheck();
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const expenses = await prisma.expense.findMany({
-      include: {
-        requestedBy: true,
-        approvedBy: true,
+    const body = await request.json();
+    const { status } = body;
+
+    const updatedExpense = await prisma.expense.update({
+      where: { id: params.expenseId },
+      data: {
+        status: status as ExpenseStatus,
+        approvedById: user.id,
       },
     });
 
-    return NextResponse.json(expenses);
+    return NextResponse.json(updatedExpense);
   } catch (error) {
-    console.error('Error fetching expenses:', error);
+    console.error('Error updating expense:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

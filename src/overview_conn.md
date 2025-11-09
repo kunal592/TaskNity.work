@@ -1,5 +1,7 @@
 # Project Overview: TaskNity.Work
 
+# Working, no need to change/edit:
+- clerk-Auth is working.
 ## 1. Introduction
 
 TaskNity.Work is a comprehensive, feature-rich task and project management application designed to streamline team collaboration and enhance productivity. It provides a robust suite of tools for managing projects, tasks, finances, attendance, and team members within a hierarchical organizational structure. The application is built with a modern, role-based access control system, ensuring that users only see the information relevant to their position.
