@@ -22,7 +22,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // TODO: Replace with actual current user logic
-    const userForRole = users.find(u => u.role === 'Member');
+    const userForRole = users.find(u => u.role === 'Admin');
     setCurrentUser(userForRole || users[0] || null);
   }, [users]);
 
